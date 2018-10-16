@@ -5,53 +5,78 @@ from typing import Dict
 
 
 class Generator(ABC):
-    """ Most abstract generator class """
+    """ Abstract generator class """
 
-    def generate_struct(self, filename: str) -> Dict:
+    def __init__(self, filename: str, k: int):
+        self.ngrams_struct = self.generate_struct(filename, k)
+
+    def generate_struct(self, filename: str, k: int = 2) -> Dict:
         ngrams_struct = Parser()
-        ngrams_struct.parse_poleval_file(filename)
+        ngrams_struct.parse_poleval_file(filename, k=k)
 
         return ngrams_struct.tokens_successors
 
-    def generate_sentence(self, filename: str, first_ngram: str) -> str:
-        ngrams_struct = self.generate_struct(filename)
+    def generate_sentence(self, first_ngram: str = None) -> str:
 
         # First ngram is either given by the user or drawn
-        ngram = first_ngram or random.choice(bigrams_struct.keys())
+        ngram = first_ngram or random.choice(list(self.ngrams_struct))
 
-        sentence = ''
+        sentence = ngram
 
-        # Generate tokens while successor exists
-        while ngram:
-            ngram = self.generate_next_token(ngram)
-            ' '.join((sentence, ngram))
+        # Generate tokens while any successor exists
+        while True:
+            next_token = self.generate_next_token(ngram)
+            if not next_token:
+                return sentence
+
+            sentence = ' '.join((sentence, next_token))
+
+            ngram = ' '.join(ngram.split()[1:] + [next_token])
 
     @abstractmethod
     def generate_next_token(self, predecessors: str) -> str:
         pass
 
 
-class BiUniGenerator(BiGenerator):
+class BiUniGenerator(Generator):
     """
     A generator drawing successors uniformly
     basing on bigrams struct
     """
 
+    def __init__(self, filename: str = 'poleval_2grams.txt', k: int = 2):
+        super().__init__(filename, k=k)
+
     def generate_next_token(self, predecessors: str) -> str:
-        pass
+
+        # Check if predecesscors are in struct and have any successor
+        if predecessors in self.ngrams_struct and \
+            self.ngrams_struct[predecessors]:
+            return random.choice(self.ngrams_struct[predecessors])[0]
+        else:
+            return None
 
 
-class TriUniGenerator(TriGenerator):
+class TriUniGenerator(Generator):
     """
     A generator drawing successors uniformly
     basing on trigrams struct
     """
 
+    def __init__(self, filename: str = 'poleval_3grams.txt', k: int = 2):
+        super().__init__(filename, k=k)
+
     def generate_next_token(self, predecessors: str) -> str:
-        pass
+
+        # Check if predecesscors are in struct and have any successor
+        if predecessors in self.ngrams_struct and \
+            self.ngrams_struct[predecessors]:
+            return random.choice(self.ngrams_struct[predecessors])[0]
+        else:
+            return None
 
 
-class BiFreqGenerator(BiGenerator):
+class BiFreqGenerator(Generator):
     """
     A generator drawing successors directly proportional
     to the number of the occurrences in bigrams struct
