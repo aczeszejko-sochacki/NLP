@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Set
+from typing import List
 
 
 class ShuffleSentence:
@@ -8,7 +8,7 @@ class ShuffleSentence:
         self.basic_sentence = basic_sentence
 
     def shuffle_sentence(self) -> str:
-        """ Returns one shuffled examle of the sentence """
+        """ Returns one shuffled example of the sentence """
 
         # Need to copy basic sentence, because
         # shuffling alters it
@@ -22,11 +22,11 @@ class ShuffleSentence:
 
         return new_sentence
 
-    def get_new_sentences(self, n_sentences: int = 3) -> Set:
+    def get_new_sentences(self, n_sentences: int = 3) -> List:
         """ Returns n shuffled examples of the sentence """
-        sentences = []
+        sentences = set()
 
         for _ in range(n_sentences):
-            sentences.append(self.shuffle_sentence())
+            sentences.add(self.shuffle_sentence())
 
-        return set(sentences)
+        return list(sentences)
