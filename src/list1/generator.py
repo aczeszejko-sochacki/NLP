@@ -1,3 +1,4 @@
+import numpy as np
 import random
 from abc import ABC, abstractmethod
 from parser import Parser
@@ -52,7 +53,7 @@ class BiUniGenerator(Generator):
         # Check if predecesscors are in struct and have any successor
         if predecessors in self.ngrams_struct and \
             self.ngrams_struct[predecessors]:
-            return random.choice(self.ngrams_struct[predecessors])[0]
+            return np.random.choice(self.ngrams_struct[predecessors])[0]
         else:
             return None
 
@@ -71,7 +72,9 @@ class TriUniGenerator(Generator):
         # Check if predecesscors are in struct and have any successor
         if predecessors in self.ngrams_struct and \
             self.ngrams_struct[predecessors]:
-            return random.choice(self.ngrams_struct[predecessors])[0]
+
+            # Draw successor using random distribution
+            return np.random.choice(self.ngrams_struct[predecessors])[0]
         else:
             return None
 
@@ -82,8 +85,27 @@ class BiFreqGenerator(Generator):
     to the number of the occurrences in bigrams struct
     """
 
+    def __init__(self, filename: str = 'poleval_2grams.txt', k: int = 2):
+        super().__init__(filename, k=k)
+
     def generate_next_token(self, predecessors: str) -> str:
-        pass
+
+        # Check if predecesscors are in struct and have any successor
+        if predecessors in self.ngrams_struct and \
+            self.ngrams_struct[predecessors]:
+
+            # Draw successor with chance of ... directly proportional
+            # to the number of the occurencces
+            values, freqs = list(zip(*self.ngrams_struct[predecessors]))
+
+            # Cast to int
+            freqs = [int(freq) for freq in freqs]
+            all_freqs = sum(freqs)
+            probs = [freq / all_freqs for freq in freqs]
+
+            return np.random.choice(values, p=probs)
+        else:
+            return None
 
 
 class TriFreqGenerator(Generator):
@@ -92,5 +114,24 @@ class TriFreqGenerator(Generator):
     to the number of the occurrences in trigrams struct
     """
 
+    def __init__(self, filename: str = 'poleval_3grams.txt', k: int = 2):
+        super().__init__(filename, k=k)
+
     def generate_next_token(self, predecessors: str) -> str:
-        pass
+
+        # Check if predecesscors are in struct and have any successor
+        if predecessors in self.ngrams_struct and \
+            self.ngrams_struct[predecessors]:
+
+            # Draw successor with chance of ... directly proportional
+            # to the number of the occurencces
+            values, freqs = list(zip(*self.ngrams_struct[predecessors]))
+
+            # Cast to int
+            freqs = [int(freq) for freq in freqs]
+            all_freqs = sum(freqs)
+            probs = [freq / all_freqs for freq in freqs]
+
+            return np.random.choice(values, p=probs)
+        else:
+            return None
