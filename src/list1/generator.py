@@ -12,8 +12,8 @@ class Generator(ABC):
         self.ngrams_struct = self.generate_struct(filename, k)
 
     def generate_struct(self, filename: str, k: int = 2) -> Dict:
-        ngrams_struct = Parser()
-        ngrams_struct.parse_poleval_file(filename, k=k)
+        ngrams_struct = Parser(filename)
+        ngrams_struct.parse_poleval_file(k=k)
 
         return ngrams_struct.tokens_successors
 
@@ -53,7 +53,9 @@ class BiUniGenerator(Generator):
         # Check if predecesscors are in struct and have any successor
         if predecessors in self.ngrams_struct and \
             self.ngrams_struct[predecessors]:
-            return np.random.choice(self.ngrams_struct[predecessors])[0]
+            return np.random.choice([succ for succ, _
+                                     in self.ngrams_struct[
+                                     predecessors]])
         else:
             return None
 
@@ -74,7 +76,9 @@ class TriUniGenerator(Generator):
             self.ngrams_struct[predecessors]:
 
             # Draw successor using random distribution
-            return np.random.choice(self.ngrams_struct[predecessors])[0]
+            return np.random.choice([succ for succ, _
+                                     in self.ngrams_struct[
+                                     predecessors]])
         else:
             return None
 

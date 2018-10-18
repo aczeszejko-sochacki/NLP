@@ -10,17 +10,19 @@ class Parser:
     of first word of each line in the file
     """
 
-    def __init__(self):
+    def __init__(self, filename: str):
         self._tokens_successors = dict()
+        self.filename = filename
 
     @property
-    def grams_2_path_prefix(self) -> str:
-        """ Get common refix of the poleval location """
+    def get_ngrams_file_path(self) -> str:
+        """ Path to the file with ngrams data """
 
-        prefix = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                              '..', '..', 'data')
+        ngrams_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                              '..', '..', 'data',
+                                              self.filename)
 
-        return prefix
+        return ngrams_path
 
     @property
     def tokens_successors(self) -> Dict:
@@ -44,13 +46,10 @@ class Parser:
                 self.tokens_successors[predecessors] = [(successor,
                                                          frequency)]
 
-    def parse_poleval_file(self,
-                           poleval_filename: str,
-                           k: int = 2) -> Dict:
+    def parse_poleval_file(self, k: int = 2) -> Dict:
         """ Create predecessors-successors structure """
 
-        with open(os.path.join(self.grams_2_path_prefix,
-                               poleval_filename)) as poleval:
+        with open(self.get_ngrams_file_path) as poleval:
 
             # Tokenize each line
             for line in poleval:

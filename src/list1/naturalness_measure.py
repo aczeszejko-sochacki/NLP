@@ -61,7 +61,7 @@ class MeasureNaturalness:
 
          shuffler = ShuffleSentence(sentence)
 
-         sentences = shuffler.get_new_sentences()
+         sentences = shuffler.get_new_sentences(n_sentences=n_permutations)
 
          sentences_with_freq = [(sentence, self.measure_sum_freq(sentence))
                                 for sentence in sentences]
