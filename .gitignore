@@ -138,6 +138,6 @@ pip-selfcheck.json
 
 
 # Own files
-/data
+*/data
 
 # End of https://www.gitignore.io/api/python,jupyternotebook

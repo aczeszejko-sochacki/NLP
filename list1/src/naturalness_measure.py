@@ -2,7 +2,7 @@ import os
 from itertools import repeat
 from more_itertools import zip_offset
 from typing import List
-from shuffle_sentence import ShuffleSentence
+from .shuffle_sentence import ShuffleSentence
 from operator import itemgetter
 
 
@@ -15,9 +15,10 @@ class MeasureNaturalness:
     def get_ngrams_file_path(self) -> str:
         """ Path to the file with ngrams data """
 
-        ngrams_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                              '..', '..', 'data',
-                                              self.filename)
+        ngrams_path = os.path.join(os.path.dirname(
+                                       os.path.abspath(__file__)
+                                   ),
+                                   '..', 'data', self.filename)
 
         return ngrams_path
 

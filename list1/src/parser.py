@@ -18,9 +18,10 @@ class Parser:
     def get_ngrams_file_path(self) -> str:
         """ Path to the file with ngrams data """
 
-        ngrams_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                              '..', '..', 'data',
-                                              self.filename)
+        ngrams_path = os.path.join(os.path.dirname(
+                                       os.path.abspath(__file__)
+                                   ),
+                                   '..', 'data', self.filename)
 
         return ngrams_path
 

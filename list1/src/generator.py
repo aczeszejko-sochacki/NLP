@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from abc import ABC, abstractmethod
-from parser import Parser
+from .parser import Parser
 from typing import Dict
 
 
