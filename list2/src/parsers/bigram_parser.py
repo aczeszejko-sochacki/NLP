@@ -3,6 +3,13 @@ from typing import List, Dict
 from .paths import DATA_DIR_PATH
 
 
+class Bigrams:
+    """ A class representing predecessor: successors struct """
+
+    def __init__(self, bigrams: Dict):
+        self.bigrams = bigrams
+
+
 class BigramParser:
     """
     A class creating bigrams statistics
@@ -34,4 +41,4 @@ class BigramParser:
                 if int(freq) > k:
                     self.update_bigram_struct(tokens, int(freq))
 
-        return self.bigrams
+        return Bigrams(self.bigrams)

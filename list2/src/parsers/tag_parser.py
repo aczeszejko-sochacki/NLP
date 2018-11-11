@@ -19,6 +19,10 @@ class TaggedTokens:
     def get_sentence_tags(self, sentence: str) -> str:
         sentence_tags = []
 
+        # The first capital letter is (with a high probability)
+        # a result of beginning the sentence
+        sentence = sentence[0].lower() + sentence[1:]
+
         for token in sentence.split():
             try:
                 token_tag = self.get_token_tag(token)

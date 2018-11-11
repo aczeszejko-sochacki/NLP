@@ -3,6 +3,13 @@ from typing import List, Dict
 from .paths import DATA_DIR_PATH
 
 
+class Unigrams:
+    """ A class representing token: freq struct """
+
+    def __init__(self, unigrams: Dict):
+        self.unigrams = unigrams
+
+
 class UnigramParser:
     """
     A class creating unigrams statistics
@@ -22,7 +29,7 @@ class UnigramParser:
             else:
                 self.unigrams[token] = freq
 
-    def create_unigrams_struct(self) -> Dict:
+    def create_unigrams_struct(self) -> Unigrams:
         """ Read the file and create token-freq struct """
 
         with open(self.poleval_path) as poleval:
@@ -31,4 +38,4 @@ class UnigramParser:
 
                 self.update_unigram_freq_of_tag(tokens, int(freq))
 
-        return self.unigrams
+        return Unigrams(self.unigrams)

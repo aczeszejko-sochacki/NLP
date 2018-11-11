@@ -47,7 +47,8 @@ class TagGenerator:
         return rand_token
 
     def rand_token_tag_bigrams(self, tag: str, predecessor: str,
-                               bigrams: Dict, tag_sets: TagSets) -> str:
+                               bigrams: Dict, tag_sets: TagSets,
+                               continuations: int) -> str:
         """
         Return drawn token from the intersection
         of the set of similarly tagged tokens
@@ -61,6 +62,13 @@ class TagGenerator:
         continuations_correct_tag = [(token, freq) for token, freq in
                                      continuations_with_freqs
                                      if token in tag_tokens]
+
+        continuations_with_further_continuation = [(token, freq)
+                                                   for token, freq in
+                                                   continuations_correct_tag
+                                                   if token in bigrams
+                                                   if len(bigrams[token])
+                                                   >= continuations]
 
         rand_token = self.rand_by_freqs(continuations_correct_tag)
         return rand_token
@@ -91,7 +99,7 @@ class TagGeneratorUni(TagGenerator):
             except (TagDoesNotExist, NoContinuation):
                 new_sentence.append('?')     # TODO
 
-        return ' '.join(new_sentence)
+        return ' '.join(new_sentence).capitalize()
 
 
 class TagGeneratorBi(TagGenerator):
@@ -103,7 +111,8 @@ class TagGeneratorBi(TagGenerator):
                                             tagged_tokens: TaggedTokens,
                                             unigrams: Dict,
                                             bigrams: Dict,
-                                            tag_sets: TagSets) -> str:
+                                            tag_sets: TagSets,
+                                            continuations: int = 1) -> str:
         """
         Generate sentence with tokens having the same tags
         as the given sentence (maintaining the same order).
@@ -130,7 +139,8 @@ class TagGeneratorBi(TagGenerator):
                 new_sentence.append(self.rand_token_tag_bigrams(tag,
                                                                 predecessor,
                                                                 bigrams,
-                                                                tag_sets))
+                                                                tag_sets,
+                                                                continuations))
             except TagDoesNotExist:
                 new_sentence.append('?')
             except NoContinuation:
@@ -143,4 +153,4 @@ class TagGeneratorBi(TagGenerator):
                 except TagDoesNotExist:
                     new_sentence.append('dupa')     # TODO
 
-        return ' '.join(new_sentence)
+        return ' '.join(new_sentence).capitalize()
