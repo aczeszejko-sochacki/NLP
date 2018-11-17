@@ -2,6 +2,9 @@ import numpy as np
 from .parsers.tag_parser import TagParser, TaggedTokens, TagSets
 from typing import List, Tuple, Dict
 from .exceptions import TokenNotTagged, NoContinuation, TagDoesNotExist
+from .parsers.token_parser import TokenParser
+from .parsers.unigram_parser import Unigrams
+from .parsers.bigram_parser import Bigrams
 
 
 class TagGenerator:
@@ -30,25 +33,42 @@ class TagGenerator:
 
         return rand_token
 
-    def rand_token_tag_unigrams(self, tag: str, unigrams: Dict,
-                                tag_sets: TagSets) -> str:
+    def rand_token_tag_unigrams(self, tag: str, unigrams: Unigrams,
+                                tag_sets: TagSets,
+                                n_syllables: int = None,
+                                suffix: str = None) -> str:
         """
         Return drawn token from the list
         satisfying the schema (token, freq).
         Probs directly proportional to the freqs
         """
 
+        unigrams = unigrams.unigrams
         tag_tokens = tag_sets.get_tag_tokens(tag)
 
         freq_tag_tokens = [(token, unigrams[token])
                            for token in tag_tokens if token in unigrams]
 
+        # Optional: filter possible conts by #syl
+        if n_syllables is not None:
+            freq_tag_tokens = [(token, freq) for token, freq in
+                               freq_tag_tokens
+                               if TokenParser.count_syllables(token) == \
+                               n_syllables]
+
+        # Optional: filter possible conts by a suffix
+        if suffix is not None:
+            freq_tag_tokens = [(token, freq) for token, freq in
+                               freq_tag_tokens
+                               if token.endswith(suffix)]
+
         rand_token = self.rand_by_freqs(freq_tag_tokens)
         return rand_token
 
     def rand_token_tag_bigrams(self, tag: str, predecessor: str,
-                               bigrams: Dict, tag_sets: TagSets,
-                               continuations: int) -> str:
+                               bigrams: Bigrams, tag_sets: TagSets,
+                               continuations: int,
+                               n_syllables: int = None) -> str:
         """
         Return drawn token from the intersection
         of the set of similarly tagged tokens
@@ -57,20 +77,25 @@ class TagGenerator:
 
         tag_tokens = tag_sets.get_tag_tokens(tag)
 
-        continuations_with_freqs = bigrams[predecessor]
+        conts_with_freqs = bigrams.get_predecessor_conts(predecessor)
 
-        continuations_correct_tag = [(token, freq) for token, freq in
-                                     continuations_with_freqs
-                                     if token in tag_tokens]
+        bigrams = bigrams.bigrams
 
-        continuations_with_further_continuation = [(token, freq)
-                                                   for token, freq in
-                                                   continuations_correct_tag
-                                                   if token in bigrams
-                                                   if len(bigrams[token])
-                                                   >= continuations]
+        conts_correct_tag = [(token, freq) for token, freq in
+                             conts_with_freqs if token in tag_tokens]
 
-        rand_token = self.rand_by_freqs(continuations_correct_tag)
+        conts_with_further_cont = [(token, freq) for token, freq in
+                                   conts_correct_tag if token in bigrams
+                                   if len(bigrams[token]) >= continuations]
+
+        # Optional: filter possible conts by #syl
+        if n_syllables is not None:
+            conts_with_further_cont = [(token, freq) for token, freq
+                                       in conts_with_further_cont if
+                                       TokenParser.count_syllables(token) == \
+                                       n_syllables]
+
+        rand_token = self.rand_by_freqs(conts_with_further_cont)
         return rand_token
 
 
@@ -79,27 +104,38 @@ class TagGeneratorUni(TagGenerator):
     A class generating sentences basing on tags and unigrams
     """
 
-    def generate_sentence_coresponding_tags(self, sentence: str,
-                                            tagged_tokens: TaggedTokens,
-                                            unigrams: Dict,
-                                            tag_sets: TagSets) -> str:
+    def gen_sent_coresponding_tags(self, sentence: str,
+                                   tagged_tokens: TaggedTokens,
+                                   unigrams: Unigrams,
+                                   tag_sets: TagSets,
+                                   syl_stats: List = None) -> Tuple:
         """
         Generate sentence with tokens having the same tags
-        as the given sentence (maintaining the same order)
+        as the given sentence (maintaining the same order).
         """
 
+        sentence_tokens = sentence.split()
         sentence_tags = tagged_tokens.get_sentence_tags(sentence)
         new_sentence = []
+        new_sentence_meta = []
+        syl_stats = syl_stats or [None] * len(sentence_tokens)
 
-        for tag in sentence_tags:
+        for index, (tag, source) in enumerate(sentence_tags):
+            n_syl = syl_stats[index]
+
             try:
-                new_sentence.append(self.rand_token_tag_unigrams(tag,
-                                                                 unigrams,
-                                                                 tag_sets))
-            except (TagDoesNotExist, NoContinuation):
-                new_sentence.append('?')     # TODO
+                new_token = self.rand_token_tag_unigrams(tag, unigrams,
+                                                         tag_sets,
+                                                         n_syllables=n_syl)
 
-        return ' '.join(new_sentence).capitalize()
+                new_sentence.append(new_token)
+                new_sentence_meta.append(source)
+
+            except (TagDoesNotExist, NoContinuation):
+                new_sentence.append(sentence_tokens[index])
+                new_sentence_meta.append('not_replaced')
+
+        return new_sentence, new_sentence_meta
 
 
 class TagGeneratorBi(TagGenerator):
@@ -107,50 +143,70 @@ class TagGeneratorBi(TagGenerator):
     A class generating sentences basing on tags and bigrams
     """
 
-    def generate_sentence_coresponding_tags(self, sentence: str,
-                                            tagged_tokens: TaggedTokens,
-                                            unigrams: Dict,
-                                            bigrams: Dict,
-                                            tag_sets: TagSets,
-                                            continuations: int = 1) -> str:
+    def gen_sent_coresponding_tags(self, sentence: str,
+                                   tagged_tokens: TaggedTokens,
+                                   unigrams: Unigrams,
+                                   bigrams: Bigrams,
+                                   tag_sets: TagSets,
+                                   continuations: int = 1,
+                                   syl_stats: List = None) -> Tuple:
         """
         Generate sentence with tokens having the same tags
         as the given sentence (maintaining the same order).
         Draw the tokens using bigram stats
         """
 
+        sentence_tokens = sentence.split()
         sentence_tags = tagged_tokens.get_sentence_tags(sentence)
         new_sentence = []
+        new_sentence_meta = []
+        syl_stats = syl_stats or [None] * len(sentence_tokens)
 
         # First token can be drawn from the unigrams
-        first_token = sentence_tags.pop(0)
+        first_tag, first_source = sentence_tags.pop(0)
+        first_n_syl = syl_stats.pop(0)
         try:
-            new_sentence.append(self.rand_token_tag_unigrams(first_token,
-                                                             unigrams,
-                                                             tag_sets))
+            new_token = self.rand_token_tag_unigrams(first_tag, unigrams,
+                                                     tag_sets,
+                                                     n_syllables=first_n_syl)
+
+            new_sentence.append(new_token)
+            new_sentence_meta.append(first_source)
+
         except (TagDoesNotExist, NoContinuation):
-            new_sentence.append('?')
+            new_sentence.append(sentence_tokens.pop(0))
+            new_sentence_meta.append('not_replaced')
 
         # The rest should be drawn - if possible - using bigrams stats
-        for tag in sentence_tags:
+        for index, (tag, source) in enumerate(sentence_tags):
             predecessor = new_sentence[-1]
+            n_syl = syl_stats[index]
 
             try:
-                new_sentence.append(self.rand_token_tag_bigrams(tag,
-                                                                predecessor,
-                                                                bigrams,
-                                                                tag_sets,
-                                                                continuations))
+                new_token = self.rand_token_tag_bigrams(tag, predecessor,
+                                                        bigrams, tag_sets,
+                                                        continuations,
+                                                        n_syllables=n_syl)
+
+                new_sentence.append(new_token)
+                new_sentence_meta.append(source)
             except TagDoesNotExist:
-                new_sentence.append('?')
+                new_sentence.append(sentence_tokens[index])
+                new_sentence_meta.append('not_replaced')
+
             except NoContinuation:
-                new_sentence.append(' | ')
+                new_sentence_meta.append('|')
 
                 try:
-                    new_sentence.append(self.rand_token_tag_unigrams(tag,
-                                                                     unigrams,
-                                                                     tag_sets))
-                except TagDoesNotExist:
-                    new_sentence.append('dupa')     # TODO
+                    new_token = self.rand_token_tag_unigrams(tag, unigrams,
+                                                             tag_sets,
+                                                             n_syllables=n_syl)
 
-        return ' '.join(new_sentence).capitalize()
+                    new_sentence.append(new_token)
+                    new_sentence_meta.append(source)
+
+                except (TagDoesNotExist, NoContinuation):
+                    new_sentence.append(sentence_tokens[index])
+                    new_sentence_meta.append('not_replaced')
+
+        return new_sentence, new_sentence_meta

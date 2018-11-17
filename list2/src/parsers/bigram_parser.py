@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict
 from .paths import DATA_DIR_PATH
+from ..exceptions import NoContinuation
 
 
 class Bigrams:
@@ -8,6 +9,12 @@ class Bigrams:
 
     def __init__(self, bigrams: Dict):
         self.bigrams = bigrams
+
+    def get_predecessor_conts(self, predecessor: str) -> List:
+        try:
+            return self.bigrams[predecessor]
+        except KeyError:
+            raise NoContinuation
 
 
 class BigramParser:

@@ -1,5 +1,6 @@
 import re
-from typing import List
+from typing import List, Dict
+from ..exceptions import TooShortToken
 
 
 class TokenParser:
@@ -42,6 +43,22 @@ class TokenParser:
 
         return vowels_dict
 
+    def get_vowel_index_for_a_rhyme(self, vowels_dict: Dict) -> int:
+        """
+        Assumes that rhyme starts
+        with the last but not least vowel index
+        """
+
+        all_vowels_occ = sum(vowels_dict.values(), [])
+        all_vowels_occ.sort()
+
+        try:
+            index_lbnl_vowel, _ = all_vowels_occ[-2]
+
+            return index_lbnl_vowel
+        except IndexError:
+            raise TooShortToken
+
     def count_syllables(self, token: str) -> int:
         """ Return number of token syllables """
 
@@ -51,18 +68,28 @@ class TokenParser:
 
         return n_syllables
 
+    def cut_the_double_vowel(self, string: str) -> str:
+        """ Cut 'i' if the string matches pattern '^i[vowel]' """
+
+        try:
+            if string[0] == 'i' and string [1] in 'aeouąęóy':
+                return string[1:]
+            else:
+                return string
+        except IndexError:
+            raise TooShortToken
+
     def get_token_end_for_a_rhyme(self, token: str) -> str:
         """ Return the last syllable + prepending vowel """
 
         vowel_occurrences = self.find_vowel_occurrences(token)
 
-        all_vowels_occ = sum(vowel_occurrences.values(), [])
-        all_vowels_occ.sort()
-
         try:
-            index_lbnl_vowel, _ = all_vowels_occ[-2]
+            index_lbnl_vowel = \
+                self.get_vowel_index_for_a_rhyme(vowel_occurrences)
 
             return token[index_lbnl_vowel:]
-        except IndexError:
+
+        except TooShortToken:
             # One syllable token
             return token

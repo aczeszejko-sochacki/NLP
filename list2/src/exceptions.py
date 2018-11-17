@@ -8,3 +8,15 @@ class TagDoesNotExist(Exception):
 
 class NoContinuation(Exception):
     pass
+
+
+class TooShortToken(Exception):
+    pass
+
+
+class CannotPredictTokenTag(Exception):
+    pass
+
+
+class NoRhyme(Exception):
+    pass

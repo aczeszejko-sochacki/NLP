@@ -1,6 +1,8 @@
 import os
+from operator import itemgetter
 from typing import Dict, List, Type
-from ..exceptions import TokenNotTagged, TagDoesNotExist
+from ..exceptions import (TokenNotTagged, TagDoesNotExist,
+                          CannotPredictTokenTag)
 from .paths import SUPERTAGS_PATH
 
 
@@ -16,6 +18,34 @@ class TaggedTokens:
         except KeyError:
             raise TokenNotTagged
 
+    def get_predicted_token_tag(self, token: str) -> str:
+        """
+        If the token is not tagged, try to make a prediction
+        based on the tokens with the same suffix of length 3
+        """
+
+        token_suffix = token[-3:]
+
+        token_possible_tags = {}
+
+        # Find possible tags
+        for token in self.tagged_tokens:
+            if token.endswith(token_suffix):
+                if self.tagged_tokens[token] in token_possible_tags:
+
+                    # Vote for this tag
+                    token_possible_tags[self.tagged_tokens[token]] += 1
+                else:
+
+                    # Add a tag to possibilities
+                    token_possible_tags[self.tagged_tokens[token]] = 1
+
+        # Return the most frequent one
+        predicted_tag = max(token_possible_tags.items(),
+                            key=itemgetter(1))[0]
+
+        return predicted_tag
+
     def get_sentence_tags(self, sentence: str) -> str:
         sentence_tags = []
 
@@ -27,9 +57,16 @@ class TaggedTokens:
             try:
                 token_tag = self.get_token_tag(token)
 
-                sentence_tags.append(token_tag)
+                sentence_tags.append((token_tag, 'tagged'))
             except TokenNotTagged:
-                sentence_tags.append(None)  # TODO Tag unknown
+                try:
+                    token_tag = self.get_predicted_token_tag(token)
+
+                    sentence_tags.append((token_tag, 'predicted'))
+                except CannotPredictTokenTag:
+
+                    # Hope it will not be raised anytime
+                    sentence_tags.append((None, None))
 
         return sentence_tags
 
