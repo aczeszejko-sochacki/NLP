@@ -18,8 +18,7 @@ class SentenceParser:
 
     def delete_interpunction(self, sentence: str) -> List:
 
-        int_marks = ('.', '?', '!', ',', '...', ':')
-        # deleted_interpunction = []
+        int_marks = ('.', '?', '!', ',', '...', ':', ';')
 
         deleted_interpunction = [token[:-1] if token.endswith(int_marks)
                                  else token for token in sentence.split()]

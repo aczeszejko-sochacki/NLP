@@ -1,6 +1,6 @@
 import os
 from operator import itemgetter
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Tuple
 from ..exceptions import (TokenNotTagged, TagDoesNotExist,
                           CannotPredictTokenTag)
 from .paths import SUPERTAGS_PATH
@@ -41,12 +41,15 @@ class TaggedTokens:
                     token_possible_tags[self.tagged_tokens[token]] = 1
 
         # Return the most frequent one
-        predicted_tag = max(token_possible_tags.items(),
-                            key=itemgetter(1))[0]
+        try:
+            predicted_tag = max(token_possible_tags.items(),
+                                key=itemgetter(1))[0]
+        except ValueError:
+            raise CannotPredictTokenTag
 
         return predicted_tag
 
-    def get_sentence_tags(self, sentence: str) -> str:
+    def get_sentence_tags(self, sentence: str) -> Tuple:
         sentence_tags = []
 
         # The first capital letter is (with a high probability)

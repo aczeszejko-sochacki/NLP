@@ -13,6 +13,9 @@ class TagGenerator:
     tags and ngrams
     """
 
+    def __init__(self):
+        self.token_parser = TokenParser()
+
     def rand_by_freqs(self, tokens_with_freqs: List) -> str:
         """
         Return random token drawn with probs
@@ -36,7 +39,8 @@ class TagGenerator:
     def rand_token_tag_unigrams(self, tag: str, unigrams: Unigrams,
                                 tag_sets: TagSets,
                                 n_syllables: int = None,
-                                suffix: str = None) -> str:
+                                suffix: str = None,
+                                skip: str = None) -> str:
         """
         Return drawn token from the list
         satisfying the schema (token, freq).
@@ -51,9 +55,8 @@ class TagGenerator:
 
         # Optional: filter possible conts by #syl
         if n_syllables is not None:
-            freq_tag_tokens = [(token, freq) for token, freq in
-                               freq_tag_tokens
-                               if TokenParser.count_syllables(token) == \
+            freq_tag_tokens = [(token, freq) for token, freq in freq_tag_tokens
+                               if self.token_parser.count_syllables(token) == \
                                n_syllables]
 
         # Optional: filter possible conts by a suffix
@@ -61,6 +64,10 @@ class TagGenerator:
             freq_tag_tokens = [(token, freq) for token, freq in
                                freq_tag_tokens
                                if token.endswith(suffix)]
+
+        # Optional: exclude trivial rhymes
+        if skip is not None and skip in freq_tag_tokens:
+            freq_tag_tokens.remove(skip)
 
         rand_token = self.rand_by_freqs(freq_tag_tokens)
         return rand_token
@@ -92,8 +99,8 @@ class TagGenerator:
         if n_syllables is not None:
             conts_with_further_cont = [(token, freq) for token, freq
                                        in conts_with_further_cont if
-                                       TokenParser.count_syllables(token) == \
-                                       n_syllables]
+                                       self.token_parser.count_syllables(token)
+                                       == n_syllables]
 
         rand_token = self.rand_by_freqs(conts_with_further_cont)
         return rand_token
