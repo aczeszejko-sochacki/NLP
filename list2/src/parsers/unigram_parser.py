@@ -6,8 +6,9 @@ from .paths import DATA_DIR_PATH
 class Unigrams:
     """ A class representing token: freq struct """
 
-    def __init__(self, unigrams: Dict):
+    def __init__(self, unigrams: Dict, name=None):
         self.unigrams = unigrams
+        self.name = name
 
 
 class UnigramParser:
