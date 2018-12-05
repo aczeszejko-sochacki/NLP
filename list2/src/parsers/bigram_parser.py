@@ -1,6 +1,6 @@
 import os
 from typing import List, Dict
-from .paths import DATA_DIR_PATH
+from .paths import DATA_DIR_PATH, BIGRAMS_PATH
 from ..exceptions import NoContinuation
 
 
@@ -16,6 +16,15 @@ class Bigrams:
         except KeyError:
             raise NoContinuation
 
+
+class SimpleBigrams:
+    """
+    A class representing a simple dict
+    of pairs predecesor: successor
+    """
+
+    def __init__(self, bigrams: Dict):
+        self.bigrams = bigrams
 
 class BigramParser:
     """
@@ -49,3 +58,18 @@ class BigramParser:
                     self.update_bigram_struct(tokens, int(freq))
 
         return Bigrams(self.bigrams)
+
+    def create_simple_bigrams_struct(self, k: int = 3) -> SimpleBigrams:
+        """ Create {(token_1, token_2): freq, } struct """
+
+        bigrams = {}
+
+        with open(BIGRAMS_PATH) as poleval:
+            for line in poleval:
+                freq, predecesor, successor = line.split()
+
+                # Update dict
+                if int(freq) >= k:
+                    bigrams[(predecesor, successor)] = freq
+
+        return SimpleBigrams(bigrams)

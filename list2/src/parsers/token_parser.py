@@ -93,3 +93,9 @@ class TokenParser:
         except TooShortToken:
             # One syllable token
             return token
+
+    def delete_interpunction(self, token: str) -> str:
+        """ Remove not alphanumeric chars """
+        token = re.sub(r'\W+', '', token)
+
+        return token

@@ -9,3 +9,5 @@ SUPERTAGS_PATH = os.path.join(DATA_DIR_PATH, 'supertags.txt')
 
 DANE_POZYTYWISTYCZNE_DIR_PATH = os.path.join(DATA_DIR_PATH,
                                              'dane_pozytywistyczne')
+
+BIGRAMS_PATH = os.path.join(DATA_DIR_PATH, 'poleval_2grams.txt')

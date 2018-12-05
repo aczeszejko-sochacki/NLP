@@ -49,6 +49,20 @@ class TaggedTokens:
 
         return predicted_tag
 
+    def get_token_real_or_predicted_tag(self, token: str) -> str:
+        """
+        Try to get real, then predicted
+        and then return none
+        """
+
+        try:
+            return self.get_token_tag(token)
+        except TokenNotTagged:
+            try:
+                return self.get_predicted_token_tag(token)
+            except CannotPredictTokenTag:
+                return None
+
     def get_sentence_tags(self, sentence: str) -> Tuple:
         sentence_tags = []
 
