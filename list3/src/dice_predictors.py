@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Dict, Tuple
 
 
 class HeuristicPredictor:
@@ -54,3 +55,90 @@ class HeuristicPredictor:
                     return dices_predict
 
         return dices_predict
+
+
+class HMMViterbiPredictor:
+    """
+    Predict a sequence of hidden states
+    (dices) basing on created Hidden Markov Model
+    """
+
+    def compute_delta(self, act_state_ind: int, observation: any,
+                      states: Tuple, delta: np.array, A: Dict,
+                      B: Dict, delta_const: float) -> Tuple:
+        """
+        Given a_ij, b_ijo_t and delta_i(t),
+        compute delta_i*a_ij*b_ijo_t
+        """
+
+        act_state = states[act_state_ind]
+
+        deltas_with_predecesors = []
+
+        for index, prev_state in enumerate(states):
+            a_ij = A[prev_state][act_state]
+            b_ijo_t = B[prev_state][observation]
+
+            delta_i = delta[index]
+
+            new_delta_cand = a_ij * b_ijo_t * delta_i * delta_const
+
+            deltas_with_predecesors.append((new_delta_cand, index))
+
+        # Return new delta and its predecesor
+        return max(deltas_with_predecesors)
+
+    def recompute_path(self, predecesors: np.array, states: Tuple,
+                       last_state_ind: int) -> np.array:
+        """
+        Having found the best path,
+        recompute the chosen states one by one,
+        in reverse order
+        """
+
+        # Declare the result array of states
+        results = [states[last_state_ind]]
+
+        observation_range = range(len(predecesors)-1, 0, -1)
+
+        last_state = last_state_ind
+
+        # Iterate over the predecesors
+        for obs_ind in observation_range:
+            last_state = predecesors[obs_ind][last_state]
+
+            results.insert(0, states[last_state])
+
+        return results
+
+    def predict(self, observations: np.array, A: Dict,
+                B: Dict, start_states: np.array,
+                delta_const: float = 6.) -> np.array:
+
+        # Declare matrices for dynamic viterbi algorithm
+        delta = np.zeros((len(observations), len(A)))
+        predecesors = np.zeros((len(observations), len(A)), dtype=int)
+
+        # Fill the start states
+        delta[0] = start_states
+
+        # Extract possible states from A
+        states = tuple(A.keys())
+
+        # Assume the order of states in A determines the order
+        # of states in the delta
+        observation_range = range(len(observations)-1)
+        states_range = range(len(A))
+
+        for obs_ind in observation_range:
+            for act_state_ind in states_range:
+
+                delta[obs_ind+1][act_state_ind], predecesors[obs_ind+1][act_state_ind] = \
+                    self.compute_delta(act_state_ind, observations[obs_ind],
+                                       states, delta[obs_ind], A, B,
+                                       delta_const)
+
+        # Choose the best path
+        last_state_ind = np.argmax(delta[-1])
+
+        return self.recompute_path(predecesors, states, last_state_ind)
