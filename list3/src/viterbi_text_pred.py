@@ -22,16 +22,25 @@ class ViterbiRevTextPred:
         # Return a new delta and its predecesor
         return max(new_delta_cands)
 
-    def gen_poss_sent(self, sent_tokens: List, token_parser: TokenParser) -> List:
+    def gen_poss_sent(self, sent_tokens: List, token_parser: TokenParser,
+                      with_cap: bool = False) -> List:
         """ Create space of possible sentences """
 
         all_pos_rev = list(map(token_parser.gen_poss_rev_tokens,
                                sent_tokens))
 
+        # Generate tokens with cap letters too
+        if with_cap:
+            all_pos_rev_copy = all_pos_rev.copy()
+
+            for ind, revs in enumerate(all_pos_rev_copy):
+                all_pos_rev[ind].extend(
+                    list(map(lambda x: x.capitalize(), revs)))
+
         return all_pos_rev
 
     def reconstruct_sent(self, all_pos_rev: List, predecesors: List,
-                         last_token: int) -> str:
+                         last_token: int, with_cap: bool = False) -> str:
         """
         Visit all the predecesor of the last token
         to reconstruct the path
@@ -47,7 +56,8 @@ class ViterbiRevTextPred:
         return ' '.join(tokens)
 
     def predict(self, sent_tokens: List, unigrams: Unigrams,
-                bigrams: Bigrams, token_parser: TokenParser) -> List:
+                bigrams: Bigrams, token_parser: TokenParser,
+                with_cap: bool = False) -> List:
 
         all_pos_rev = self.gen_poss_sent(sent_tokens, token_parser)
 
@@ -78,6 +88,6 @@ class ViterbiRevTextPred:
 
         # Visit all the predecesors in the best path                
         final_sent = self.reconstruct_sent(all_pos_rev, predecesors,
-                                           last_token)
+                                           last_token, with_cap)
 
         return final_sent
